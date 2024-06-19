@@ -1,0 +1,12 @@
+name: process_data
+title: process_data
+username: jrengineering
+account: jrengineering
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 12203334
+bundleId: 8760684
+url: https://jrengineering.shinyapps.io/process_data/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

@@ -1,0 +1,13 @@
+name: quality_process
+title: quality_process_data
+username: jrengineering
+account: jrengineering
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 12197979
+bundleId: 8756693
+url: https://jrengineering.shinyapps.io/quality_process/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: app2.R|app3.R|setup.R
