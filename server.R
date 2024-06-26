@@ -161,8 +161,9 @@ server <- function(input, output, session) {
     dbExecute(con, query,
               params = list(input$id_muestra,
                             as.character(input$fecha),
-                            input$hora_muestra,
-                            input$location, input$o_w_ppm,
+                            as.character(input$hora_muestra),
+                            input$location,
+                            input$o_w_ppm,
                             input$tss_mg_l,
                             input$ph,
                             input$cl_mg_l,
@@ -217,7 +218,7 @@ server <- function(input, output, session) {
   output$data_table <- renderDT({
     query <- "SELECT * FROM quality_process_data"
     data <- dbGetQuery(con, query)
-    data[is.na(data)] <- "NA"  # Reemplaza los valores NA con "NA"
+    #data[is.na(data)] <- "NA"  # Reemplaza los valores NA con "NA"
     datatable(data, options = list(scrollX =TRUE, scrollY = TRUE),
               colnames = c("ID", "ID Muestra", "Fecha", "Hora Muestra", "Ubicación", "O/W (ppm)", "TSS (mg/L)", "pH", "Cl- (mg/L)", "Conduct. (µS/cm)", "Dureza Total (mg/L)", "Fe (mg/L)", "Ba (mg/L)", "SO4 (mg/L)", "Analista", "Observaciones", "Registro")
               )

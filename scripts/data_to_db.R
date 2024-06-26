@@ -8,7 +8,7 @@ library(digest)
 library(dotenv)
 
 # Cargar variables de entorno
-load_dot_env(file = ".env")
+load_dot_env(file = "./.env")
 
 # Acceder a las variables
 DB_PATH <- Sys.getenv("DB_PATH")
@@ -21,6 +21,28 @@ if (DB_PATH == "") {
 
 # Cargar el dataframe
 load(DF_PATH)
+
+# Transformar datos para coincidir con la estructura de la base de datos
+data_to_insert <- dataqa_db %>%
+  mutate(
+    fecha = as.character(fecha),
+    hora_muestra = hora, # Convertir hora a formato "HH:MM:SS"
+    cl_mg_l = Cl,
+    conduc_us_cm = conductance,
+    dureza_total_mg_l_caCO3 = CaCO3,
+    hierro_total_mg_l = Fe,
+    bario_mg_l = Ba,
+    sulfato_mg_l = SO4,
+    location = muestra,
+    o_w_ppm = o.w,
+    tss_mg_l = tss,
+    fecha_registro = as.character(datetime) # Usar datetime como fecha_registro
+  ) %>%
+  select(
+    id_muestra, fecha, hora_muestra, location, o_w_ppm, tss_mg_l, ph, cl_mg_l, conduc_us_cm,
+    dureza_total_mg_l_caCO3, hierro_total_mg_l, bario_mg_l, sulfato_mg_l, analista,
+    observaciones, fecha_registro
+  )
 
 # Crear la conexión a la base de datos SQLite
 con <- dbConnect(RSQLite::SQLite(), DB_PATH)
@@ -80,20 +102,20 @@ CREATE TABLE IF NOT EXISTS locations (
 )")
 
 # Definir las ubicaciones específicas
-locations <- c("ECOTECNIA (Out TK-W-01)", "ECOTECNIA (Out TK-W-02)", "ECOTECNIA (Out TK-W-03)", 
+locations <- c("ECOTECNIA (Out TK-W-01)", "ECOTECNIA (Out TK-W-02)", "ECOTECNIA (Out TK-W-03)",
                "ECOTECNIA (Out TK-WT-01)", "ECOTECNIA (Out TK-WT-02)", "101-A (ABARCO)", "102-A (ABARCO)",
                "AGUA CRUDA", "AGUA CRUDA DE POZO", "AGUA DOMINION (Out TK-WT03)", "AGUA ECOTECNIA (Out TK-WT01)",
                "AGUA FILTRADA (GRIFO)", "AGUA FILTRADA DEPURAR", "AGUA FILTRADA EDOSPINA", "BOMBEO", "FWKO 250 B",
-               "GENERADORES", "IN CAPTACION DEPURAR.", "IN CAPTACION EDOSPINA.", "IN FIL", "IN FILTRO",  
-               "IN FILTRO A", "IN FILTRO C", "IN SK", "OUT 101-A (ABARCO)", "OUT 101-A / 102-A (ABARCO)", 
+               "GENERADORES", "IN CAPTACION DEPURAR.", "IN CAPTACION EDOSPINA.", "IN FIL", "IN FILTRO",
+               "IN FILTRO A", "IN FILTRO C", "IN SK", "OUT 101-A (ABARCO)", "OUT 101-A / 102-A (ABARCO)",
                "OUT 102-A (ABARCO)", "OUT FIL", "OUT FILTRO", "OUT FILTRO A", "OUT MTB", "OUT SUAVIZADA",
                "OUT TTO", "OUT-TKWT-03", "P DEPURAR # 1", "P DEPURAR # 2", "P DEPURAR # 3", "PLANTA 101 EIS ABA",
                "PLANTA 102 EIS ABA", "PLANTA DEP 3 B-1", "PLANTA DEP 3 B-2", "PLANTA DEPURAR 1", "PLANTA DEPURAR 2",
                "PLANTA DEPURAR 3", "PLANTA DEPURAR 3 - BANCO-1", "PLANTA DEPURAR 3 - BANCO-2", "PLANTA DEPURAR 3 B-1",
                "PLANTA DEPURAR 3 B2", "PLANTA DEPURAR 3 BANCO 1", "PLANTA DEPURAR 3 BANCO 2", "PLANTA EDOSPINA 2",
-               "PLANTA EDOSPINA 1", "PLANTA EDOSPINA 2", "POCETA (ABARCO) PH2", "TK WT 03 (DOMINION)",  
+               "PLANTA EDOSPINA 1", "PLANTA EDOSPINA 2", "POCETA (ABARCO) PH2", "TK WT 03 (DOMINION)",
                "TK WT-03", "TK-103 (DOMINION)", "TK-252", "TK-3-WT (DOMINION)", "TK-5-02", "TK-503-WT (DOMINION)",
-               "TK-7-03", "TK-W-01 (ECOTECNIA)", "TK-W03", "TK-WT-01 (ECOTECNIA)", "TK-WT-02", 
+               "TK-7-03", "TK-W-01 (ECOTECNIA)", "TK-W03", "TK-WT-01 (ECOTECNIA)", "TK-WT-02",
                "TK-WT-02 (ECOTECNIA)", "TK-WT-503", "TK-WT03 (DOMINION)", "TK-WT503")
 
 # Insertar localizaciones por defecto si no existen
@@ -105,37 +127,16 @@ if (length(new_locations) > 0) {
   dbWriteTable(con, "locations", data_frame_locations, append = TRUE, row.names = FALSE)
 }
 
-# Transformar datos para coincidir con la estructura de la base de datos
-data_to_insert <- dataqa_db %>%
-  mutate(
-    fecha = as.character(fecha),
-    hora_muestra = hora, # Convertir hora a formato "HH:MM:SS"
-    cl_mg_l = Cl,
-    conduc_us_cm = conductance,
-    dureza_total_mg_l_caCO3 = CaCO3,
-    hierro_total_mg_l = Fe,
-    bario_mg_l = Ba,
-    sulfato_mg_l = SO4,
-    location = muestra,
-    o_w_ppm = o.w,
-    tss_mg_l = tss,
-    fecha_registro = as.character(datetime) # Usar datetime como fecha_registro
-  ) %>%
-  select(
-    id_muestra, fecha, hora_muestra, location, o_w_ppm, tss_mg_l, ph, cl_mg_l, conduc_us_cm, 
-    dureza_total_mg_l_caCO3, hierro_total_mg_l, bario_mg_l, sulfato_mg_l, analista, 
-    observaciones, fecha_registro
-  )
 
 # Crear la consulta de inserción
 query <- "
 INSERT INTO quality_process_data (
-  id_muestra, fecha, hora_muestra, location, o_w_ppm, tss_mg_l, ph, cl_mg_l, conduc_us_cm, 
-  dureza_total_mg_l_caCO3, hierro_total_mg_l, bario_mg_l, sulfato_mg_l, analista, 
+  id_muestra, fecha, hora_muestra, location, o_w_ppm, tss_mg_l, ph, cl_mg_l, conduc_us_cm,
+  dureza_total_mg_l_caCO3, hierro_total_mg_l, bario_mg_l, sulfato_mg_l, analista,
   observaciones, fecha_registro
 ) VALUES (
-  :id_muestra, :fecha, :hora_muestra, :location, :o_w_ppm, :tss_mg_l, :ph, :cl_mg_l, :conduc_us_cm, 
-  :dureza_total_mg_l_caCO3, :hierro_total_mg_l, :bario_mg_l, :sulfato_mg_l, :analista, 
+  :id_muestra, :fecha, :hora_muestra, :location, :o_w_ppm, :tss_mg_l, :ph, :cl_mg_l, :conduc_us_cm,
+  :dureza_total_mg_l_caCO3, :hierro_total_mg_l, :bario_mg_l, :sulfato_mg_l, :analista,
   :observaciones, :fecha_registro
 )
 "
